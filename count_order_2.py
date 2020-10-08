@@ -1,10 +1,12 @@
 import itertools
 
-perms = itertools.permutations(range(5))
+order = 8
+
+perms = itertools.permutations(range(order))
 
 def order_2(perm):
     good = True
-    for i in range(5):
+    for i in range(order):
         intermediate = perm[i]
         end = perm[intermediate]
         if i != end:
@@ -17,7 +19,6 @@ def order_2(perm):
 
 count = 0
 for perm in perms:
-    total += 1
     if order_2(perm):
         count += 1
 print(count)
