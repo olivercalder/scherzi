@@ -1,0 +1,86 @@
+#!/bin/sh
+
+USAGE="USAGE: squish-server ID VIDEO [AUDIO] [SQUISH]\nVIDEO and AUDIO can be either local file paths or youtube links\nAUDIO is optional -- if not given, will use VIDEO's original audio\nSQUISH is optional, the ratio by which the width is squished -- defaults to 2"
+
+ID="$1"
+VIDEO="video_$ID.mp4"
+AUDIO="audio_$ID.aac"
+SQUISHED_VIDEO="squished_video_$ID.mp4"
+
+RATIO="$4"
+[ -n "$RATIO" ] || RATIO="3"
+
+{ [ "$1" = "" ] || [ "$2" = "" ] ; } && echo "$USAGE"
+
+download_and_convert_video () {
+    TMP_VIDEO="orig_codec_video_$ID"
+    while true; do
+        youtube-dl -o "$TMP_VIDEO.%(ext)s" "$1" && break
+    done
+    if [ "$(ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of csv=p=0:s=x "$TMP_VIDEO"*)" = "h264" ]; then
+        ffmpeg -i "$TMP_VIDEO"* -c:v copy "$VIDEO"
+    else
+        ffmpeg -i "$TMP_VIDEO"* "$VIDEO"
+    fi
+    rm "$TMP_VIDEO".*
+}
+
+download_and_convert_audio () {
+    TMP_AUDIO="orig_codec_audio_$ID"
+    while true; do
+        youtube-dl -x -o "$TMP_AUDIO.%(ext)s" "$1" && break
+    done
+    if [ "$(ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of csv=p=0:s=x "$TMP_AUDIO"*)" = "aac" ]; then
+        ffmpeg -i "$TMP_AUDIO"* -c copy "$AUDIO"
+    else
+        ffmpeg -i "$TMP_AUDIO"* "$AUDIO"
+    fi
+    rm "$TMP_AUDIO"*
+}
+
+if [ -f "$2" ]; then
+    if [ "$(ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of csv=p=0:s=x "$2")" = "h264" ]; then
+        ffmpeg -i "$2" -c copy "$VIDEO"
+    else
+        ffmpeg -i "$2" "$VIDEO"
+    fi
+else
+    case "$2" in
+        *"youtube.com"*) echo "Downloading video from '$2'..."; download_and_convert_video "$2" ;;
+        *"youtu.be"*) echo "Downloading video from '$2'..."; download_and_convert_video "$2" ;;
+        *) echo "ERROR: Video input '$2' not recognized as a valid file or youtube link.\n    Be sure to include the file extension (.mp4, .avi, .mov, etc.)"; exit 1
+    esac
+fi
+
+if [ -n "$3" ]; then
+    if [ -f "$3" ]; then
+        if [ "$(ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of csv=p=0:s=x "$3")" = "aac" ]; then
+            ffmpeg -i "$3" -c copy "$AUDIO"
+        else
+            ffmpeg -i "$3" "$AUDIO"
+        fi
+    else
+        AUDIO="audio_$ID.aac"
+        case "$3" in
+            *"youtube.com"*) echo "Downloading audio from '$3'..."; download_and_convert_audio "$3" ;;
+            *"youtu.be"*) echo "Downloading audio from '$3'..."; download_and_convert_audio "$3" ;;
+            *) echo "ERROR: Audio input '$3' not recognized as a valid file or youtube link.\n    Be sure to include the file extension (.mp3, .aac, .m4a, etc.)"; exit 1
+        esac
+    fi
+else
+    AUDIO="audio_$ID.aac"
+    ffmpeg -i "$VIDEO" "$AUDIO"
+fi
+
+ORIG_WIDTH="$(ffprobe -v error -show_entries stream=width -of csv=p=0:s=x "$VIDEO" | grep ".")"
+ORIG_HEIGHT="$(ffprobe -v error -show_entries stream=height -of csv=p=0:s=x "$VIDEO" | grep ".")"
+echo "About to get new width..."
+NEW_WIDTH="$(expr $ORIG_WIDTH / $RATIO)"
+
+echo "About to do final squish..."
+
+ffmpeg -i "$VIDEO" -i "$AUDIO" -map 1:a:0 -map 0:v:0 -shortest -c copy -s "$NEW_WIDTH"x"$ORIG_HEIGHT" -aspect "$NEW_WIDTH:$ORIG_HEIGHT" "$SQUISHED_VIDEO"
+
+rm "$VIDEO"
+rm "$AUDIO"
+

@@ -1,0 +1,53 @@
+#!/bin/sh
+
+USAGE="USAGE: squish VIDEO [AUDIO] [SQUISH]\nVIDEO and AUDIO can be either local file paths or youtube links\nAUDIO is optional -- if not given, will use VIDEO's original audio\nSQUISH is optional, the ratio by which the width is squished -- defaults to 2"
+
+ID="$(date +%s)"
+
+VIDEO="$1"
+AUDIO="$2"
+RATIO="$3"
+
+[ "$VIDEO" = "" ] && echo "$USAGE"
+
+if [ -f "$VIDEO" ]; then
+    echo "Copying video file '$VIDEO' to Oliver's server..."
+    scp "$VIDEO" holland@calder.dev:
+    echo
+else
+    case "$VIDEO" in
+        *"youtube.com"*) ;;
+        *"youtu.be"*) ;;
+        *) echo "ERROR: Video input '$VIDEO' not recognized as a valid file or youtube link.\n    Be sure to include the file extension (.mp4, .mkv, .mov, etc.)"; exit 1
+    esac
+fi
+
+if [ -n "$AUDIO" ]; then
+    if [ -f "$AUDIO" ]; then
+        echo "Copying audio file '$AUDIO' to Oliver's server..."
+        scp "$AUDIO" holland@calder.dev:
+        echo
+    else
+        case "$AUDIO" in
+            *"youtube.com"*) ;;
+            *"youtu.be"*) ;;
+            *) echo "ERROR: Audio input '$AUDIO' not recognized as a valid file or youtube link.\n    Be sure to include the file extension (.mp3, .aac, .m4a, etc.)"; exit 1
+        esac
+    fi
+fi
+
+echo "Logging into Oliver's server to squish video..."
+echo
+ssh holland@calder.dev ./squish-server "$ID" "$VIDEO" "$AUDIO" "$RATIO"
+echo
+echo "Copying squished video to your computer..."
+scp "holland@calder.dev:squished_video_$ID.mp4" .
+echo
+echo "Removing squished video from Oliver's server so it doesn't die..."
+ssh holland@calder.dev rm "squished_video_$ID.mp4"
+echo
+echo "Done!"
+echo
+echo "Finished squished video can be found here:"
+echo "squished_video_$ID.mp4"
+
