@@ -14,4 +14,5 @@ def merge_sort(array):
     return merge(merge_sort(array[:len(array) // 2]), merge_sort(array[len(array) // 2:]))
 
 unsorted = [5, 3, 4, 9, 8, 1, 7, 2, 0, 6]
+print(unsorted)
 print(merge_sort(unsorted))

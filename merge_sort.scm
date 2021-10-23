@@ -27,5 +27,9 @@
           (merge-sort (before-n array middle))
           (merge-sort (after-n array middle)))))))
 
-(display (merge-sort '(5 3 4 9 8 1 7 2 0 6)))
+(define unsorted '(5 3 4 9 8 1 7 2 0 6))
+
+(display unsorted)
+(display "\n")
+(display (merge-sort unsorted))
 (display "\n")
