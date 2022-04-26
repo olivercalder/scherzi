@@ -1,0 +1,114 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath, amssymb, amsthm}
+
+\title{Problems of the Fortnight}
+\author{Oliver Calder}
+\date{11 March 2022}
+
+\begin{document}
+
+\maketitle
+
+\noindent 2. Consider an $n \times n$ matrix (square array), all of whose entries are 0 and 1, for example
+\begin{align*}
+    \begin{tabular}{cccc}
+        1 & 1 & 0 & 1 \\
+        1 & 0 & 0 & 1 \\
+        0 & 0 & 0 & 1 \\
+        0 & 0 & 0 & 0
+    \end{tabular}.
+\end{align*}
+If we look at the $n$ rows of this matrix and interpret them as binary representations of integers (in the example, $n = 4$, and the integers are $1101_2 = 8 + 4 + 1 = 13$, $1101_2 = 9$, $0001_2 = 1$, $0000_2 = 0$), then add up those integers, we get an integer $R$ (in the example, $R = 13 + 9 + 1 + 0 = 23$).
+If, instead, we interpret the \textit{columns} of the matrix as binary numbers and we add those numbers, we get another integer $C$ (in the example, the columns yield the integers $1100_2 = 12$, $1000_2 = 8$, $0000_2 = 0$, $1110_2 = 14$, and so $C = 12 + 8 + 0 + 14 = 34$).
+Finally, we can subtract $R$ from $C$ to get a single integer $D = C - R$ (in the example, $D = 11$).
+Now for the problem:
+\begin{enumerate}
+    \item[a)] As a function of $n$, what is the largest possible value of $D$ (for all possible $n \times n$ matrices with entries chosen from \{0, 1\})?
+
+        \vspace{10pt}
+
+        Let $A$ denote the $n \times n$ matrix of the form described, and let $a_{i, j}$ denote the value of the entry in the $i^{th}$ row and the $j^{th}$ column of $A$.
+        Note that if $a_{i, j} = 1$, then it contributes $2^{n - i}$ to the total value of $C$ and it contributes $2^{n - j}$ to the total value of $R$.
+        Thus, \[ D = C - R = \sum_{i = 1}^n \sum_{j = 1}^n a_{i, j} \left( 2^{n - i} - 2^{n - j} \right) . \]
+        Since we want to maximize $D$, we want to include entries where the former term in the difference is greater than the latter term, and thus we want that $j > i$.
+        When $i = j$, the entry contributes equally to both $C$ and $R$, so it does not matter whether $a_{i, i}$ is 0 or 1 (see part b) for further discussion of this point).
+        Thus, the matrix with the highest value of $D = C - R$ is the matrix with 1s in all entries above the diagonal and 0s in all entries below the diagonal.
+        For simplicity, let all entries on the diagonal be 0 as well (though any of them could be 1 with no effect on the overall value of $D$).
+        Thus, in the $n = 4$ case, the highest-valued matrix is
+        \begin{align*}
+            A =
+            \begin{tabular}{cccc}
+                0 & 1 & 1 & 1 \\
+                0 & 0 & 1 & 1 \\
+                0 & 0 & 0 & 1 \\
+                0 & 0 & 0 & 0
+            \end{tabular}.
+        \end{align*}
+        The transpose of the matrix gives an equivalent way to read the columns as binary numbers.
+        \begin{align*}
+            A^\top
+            = \begin{tabular}{cccc}
+                0 & 1 & 1 & 1 \\
+                0 & 0 & 1 & 1 \\
+                0 & 0 & 0 & 1 \\
+                0 & 0 & 0 & 0
+            \end{tabular}^\top
+            = \begin{tabular}{cccc}
+                0 & 0 & 0 & 0 \\
+                1 & 0 & 0 & 0 \\
+                1 & 1 & 0 & 0 \\
+                1 & 1 & 1 & 0
+            \end{tabular}
+        \end{align*}
+        Thus, with some abuse of notation, we can view the maximum value of $D = C - R$ as the sum of differences across the rows of $A^\top$ and $A$.
+        \begin{align*}
+            D_{max} &= A^\top -_{row} A \\
+            &= \begin{tabular}{cccc}
+                0 & 0 & 0 & 0 \\
+                1 & 0 & 0 & 0 \\
+                1 & 1 & 0 & 0 \\
+                1 & 1 & 1 & 0
+            \end{tabular}
+            - \begin{tabular}{cccc}
+                0 & 1 & 1 & 1 \\
+                0 & 0 & 1 & 1 \\
+                0 & 0 & 0 & 1 \\
+                0 & 0 & 0 & 0
+            \end{tabular} \\
+            &= \begin{tabular}{cccc}
+                1 & 0 & 0 & 0 \\
+                1 & 1 & 0 & 0 \\
+                1 & 1 & 1 & 0 \\
+                0 & 0 & 0 & 0
+            \end{tabular}
+            - \begin{tabular}{cccc}
+                0 & 1 & 1 & 1 \\
+                0 & 0 & 1 & 1 \\
+                0 & 0 & 0 & 1 \\
+                0 & 0 & 0 & 0
+            \end{tabular} \\
+            &= \begin{tabular}{cccc}
+                1 & 1 & 1 & 1 \\
+                1 & 1 & 1 & 1 \\
+                1 & 1 & 1 & 1 \\
+                0 & 0 & 0 & 0
+            \end{tabular}
+            - 2 \left( \begin{tabular}{cccc}
+                0 & 1 & 1 & 1 \\
+                0 & 0 & 1 & 1 \\
+                0 & 0 & 0 & 1 \\
+                0 & 0 & 0 & 0
+            \end{tabular} \right) \\
+            &= (n - 1) (2^n - 1) - 2 \sum_{k = 1}^{n - 1} 2^k - 1 \\
+            &= (n - 1) (2^n - 1) - \sum_{k = 1}^{n - 1} 2^{k + 1} - 2 \\
+            &= (n - 1) (2^n - 1) + 2(n - 1) - \sum_{k = 1}^{n - 1} 2^{k + 1} \\
+            &= (n - 1) (2^n + 1) - \sum_{k = 2}^{n} 2^{k}
+        \end{align*}
+
+    \item[b)] Still as a function of $n$, how many different values of $D$ can occur?
+        How do you know?
+\end{enumerate}
+
+
+\end{document}
